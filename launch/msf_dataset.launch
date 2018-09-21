@@ -1,0 +1,40 @@
+<launch>
+
+<param name="/use_sim_time" value="true"/>
+
+<node pkg="topic_tools" type="drop" name="drop_vicon" args="/vicon/auk/auk 9 10 /vicon/auk/auk/drop" output="screen"/>
+
+
+<node name="swf" pkg="swf" type="swf_node">
+
+    <rosparam file="$(find swf)/launch/example.yaml"/>
+    <param name="sampling_rate_hz" value="10.0"/>
+    <param name="optimization_rate_hz" value="10.0"/>
+    <param name="max_data_age_secs" value="10.0"/>
+
+    <param name="pose_position_sd" value="0.05"/>
+    <param name="pose_orientation_sd" value="0.01"/>
+
+    <param name="model_orientation_sd" value="0.1"/>
+    <param name="model_position_sd" value="0.1"/>
+    <param name="model_linear_velocity_sd" value="0.1"/>
+
+    <param name="imu_angular_velocity_sd" value="0.01"/>
+    <param name="imu_linear_acceleration_sd" value="0.2"/>
+
+    <param name="verbose" value="true"/>
+    <remap from="swf/imu" to="/auk/fcu/imu"/>
+    <remap from="swf/pose_transform" to="/vicon/auk/auk/drop"/>
+</node>
+
+<group ns="mav" >
+<param name="msf_core/msf_output_frame" value="odom"/>
+<node name="pose_sensor_rovio" pkg="msf_updates" type="pose_sensor" clear_params="true" output="screen">
+  <remap from="msf_core/imu_state_input" to="/auk/fcu/imu" />
+  <remap from="msf_updates/transform_input" to="/vicon/auk/auk/drop" />
+  <rosparam file="$(find mav_startup)/parameters/mavs/bluebird/msf_parameters_vision.yaml"/>
+  <param name="capability_group" value="Rovio" />
+</node>
+</group>
+
+</launch>
