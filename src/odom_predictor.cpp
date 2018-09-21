@@ -139,7 +139,8 @@ void OdomPredictor::integrateIMUData(const sensor_msgs::Imu& msg) {
                     imu_linear_acceleration_bias_);
   transform_.getPosition() =
       transform_.getPosition() +
-      delta_time * (linear_velocity_ + delta_linear_velocity / 2.0);
+      transform_.getRotation().rotate(
+          delta_time * (linear_velocity_ + delta_linear_velocity / 2.0));
   linear_velocity_ += delta_linear_velocity;
 
   // apply the other half of the rotation delta
