@@ -258,8 +258,8 @@ void OdomPredictor::publishOdometry() {
   tf::poseKindrToMsg(transform_ * T_imu_pose_, &msg.pose.pose);
   msg.pose.covariance = pose_covariance_;
 
-  tf::vectorKindrToMsg(linear_velocity_, &msg.twist.twist.linear);
-  tf::vectorKindrToMsg(angular_velocity_, &msg.twist.twist.angular);
+  tf::vectorKindrToMsg(T_imu_pose_.getRotation().rotate(linear_velocity_), &msg.twist.twist.linear);
+  tf::vectorKindrToMsg(T_imu_pose_.getRotation().rotate(angular_velocity_), &msg.twist.twist.angular);
   msg.twist.covariance = twist_covariance_;
 
   odom_pub_.publish(msg);
