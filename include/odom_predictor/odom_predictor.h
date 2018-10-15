@@ -18,13 +18,15 @@ class OdomPredictor {
  public:
   OdomPredictor(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private);
 
+ private:
   void odometryCallback(const nav_msgs::OdometryConstPtr& msg);
 
   void imuCallback(const sensor_msgs::ImuConstPtr& msg);
 
   void imuBiasCallback(const sensor_msgs::ImuConstPtr& msg);
 
- private:
+  bool loadXMLTransform(const std::string& param_name, Transformation* T);
+
   void integrateIMUData(const sensor_msgs::Imu& msg);
 
   void publishOdometry();
@@ -70,6 +72,8 @@ class OdomPredictor {
 
   boost::array<double, 36ul> pose_covariance_;
   boost::array<double, 36ul> twist_covariance_;
+
+  Transformation T_imu_pose_;
 };
 
 #endif  // ODOM_PREDICTOR_ODOM_PREDICTOR_H_
