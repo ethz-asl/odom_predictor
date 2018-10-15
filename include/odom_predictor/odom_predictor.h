@@ -29,7 +29,11 @@ class OdomPredictor {
 
   void publishOdometry();
 
+  void timerCallback(const ros::TimerEvent&);
+
   void publishTF();
+
+  bool constant_velocity_model_;
 
   bool have_odom_;
   bool have_bias_;
@@ -43,6 +47,8 @@ class OdomPredictor {
 
   ros::Publisher odom_pub_;
   ros::Publisher transform_pub_;
+
+  ros::Timer timer_;
 
   tf::TransformBroadcaster br_;
 

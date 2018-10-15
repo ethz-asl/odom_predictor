@@ -7,13 +7,25 @@ OdomPredictor::OdomPredictor(const ros::NodeHandle& nh,
       seq_(0),
       have_odom_(false),
       have_bias_(false) {
-  nh_private.param("max_imu_queue_length", max_imu_queue_length_, 1000);
-
   constexpr size_t kROSQueueLength = 100;
-  imu_sub_ =
-      nh_.subscribe("imu", kROSQueueLength, &OdomPredictor::imuCallback, this);
-  imu_bias_sub_ = nh_.subscribe("imu_bias", kROSQueueLength,
-                                &OdomPredictor::imuBiasCallback, this);
+
+  nh_private.param("constant_velocity_model", constant_velocity_model_, false);
+
+  if (constant_velocity_model_) {
+    double model_rate_hz;
+    nh_private.param("model_rate_hz", model_rate_hz, 100.0);
+
+    timer_ = nh.createTimer(ros::Duration(1.0 / model_rate_hz),
+                           &OdomPredictor::timerCallback, this);
+  } else {
+    nh_private.param("max_imu_queue_length", max_imu_queue_length_, 1000);
+
+    imu_sub_ = nh_.subscribe("imu", kROSQueueLength,
+                             &OdomPredictor::imuCallback, this);
+    imu_bias_sub_ = nh_.subscribe("imu_bias", kROSQueueLength,
+                                  &OdomPredictor::imuBiasCallback, this);
+  }
+
   odometry_sub_ = nh_.subscribe("odometry", kROSQueueLength,
                                 &OdomPredictor::odometryCallback, this);
 
@@ -24,14 +36,8 @@ OdomPredictor::OdomPredictor(const ros::NodeHandle& nh,
 }
 
 void OdomPredictor::odometryCallback(const nav_msgs::OdometryConstPtr& msg) {
-  if (!have_bias_) {
+  if (!constant_velocity_model_ && !have_bias_) {
     return;
-  }
-
-  // clear old IMU measurements
-  while (!imu_queue_.empty() &&
-         imu_queue_.front().header.stamp < msg->header.stamp) {
-    imu_queue_.pop_front();
   }
 
   // extract useful information from message
@@ -43,20 +49,28 @@ void OdomPredictor::odometryCallback(const nav_msgs::OdometryConstPtr& msg) {
   frame_id_ = msg->header.frame_id;
   child_frame_id_ = msg->child_frame_id;
 
-  // reintegrate IMU messages
   estimate_timestamp_ = msg->header.stamp;
 
-  try {
-    for (const sensor_msgs::Imu& imu_msg : imu_queue_) {
-      integrateIMUData(imu_msg);
+  if (!constant_velocity_model_) {
+    // clear old IMU measurements
+    while (!imu_queue_.empty() &&
+           imu_queue_.front().header.stamp < msg->header.stamp) {
+      imu_queue_.pop_front();
     }
-  } catch (std::exception& e) {
-    ROS_ERROR_STREAM(
-        "IMU INTEGRATION FAILED, RESETING EVERYTHING: " << e.what());
-    have_bias_ = false;
-    have_odom_ = false;
-    imu_queue_.clear();
-    return;
+
+    // reintegrate IMU messages
+    try {
+      for (const sensor_msgs::Imu& imu_msg : imu_queue_) {
+        integrateIMUData(imu_msg);
+      }
+    } catch (std::exception& e) {
+      ROS_ERROR_STREAM(
+          "IMU INTEGRATION FAILED, RESETING EVERYTHING: " << e.what());
+      have_bias_ = false;
+      have_odom_ = false;
+      imu_queue_.clear();
+      return;
+    }
   }
 
   have_odom_ = true;
@@ -98,6 +112,36 @@ void OdomPredictor::imuCallback(const sensor_msgs::ImuConstPtr& msg) {
     imu_queue_.clear();
     return;
   }
+
+  publishOdometry();
+  publishTF();
+  ++seq_;
+}
+
+void OdomPredictor::timerCallback(const ros::TimerEvent&) {
+  if (!have_odom_) {
+    return;
+  }
+
+  ros::Time now = ros::Time::now();
+  const double delta_time = (now - estimate_timestamp_).toSec();
+
+  // apply constant velocity model
+  const Vector3 delta_angle = delta_time * angular_velocity_;
+
+  // apply half of the rotation delta
+  const Rotation half_delta_rotation = Rotation::exp(delta_angle / 2.0);
+  transform_.getRotation() = transform_.getRotation() * half_delta_rotation;
+
+  // find changes in position
+  transform_.getPosition() =
+      transform_.getPosition() +
+      transform_.getRotation().rotate(delta_time * linear_velocity_);
+
+  // apply the other half of the rotation delta
+  transform_.getRotation() = transform_.getRotation() * half_delta_rotation;
+
+  estimate_timestamp_ = now;
 
   publishOdometry();
   publishTF();
