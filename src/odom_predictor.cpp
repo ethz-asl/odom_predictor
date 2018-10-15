@@ -26,7 +26,7 @@ OdomPredictor::OdomPredictor(const ros::NodeHandle& nh,
       ROS_INFO_STREAM("Loaded pose to IMU transform:\n" << T_imu_pose_);
     } else if (loadXMLTransform("T_cam_sensor_imu", &T_cam_sensorimu) &&
                loadXMLTransform("T_cam_mav_imu", &T_cam_mavimu)) {
-      T_imu_pose_ = (T_cam_mavimu * T_cam_sensorimu.inverse()).inverse();
+      T_imu_pose_ = (T_cam_sensorimu.inverse()*T_cam_mavimu);
       ROS_INFO_STREAM("Loaded camera to Sensor IMU transform:\n"
                       << T_cam_sensorimu);
       ROS_INFO_STREAM("Loaded camera to MAV IMU transform:\n" << T_cam_mavimu);
