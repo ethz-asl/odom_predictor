@@ -1,6 +1,7 @@
 #ifndef ODOM_PREDICTOR_ODOM_PREDICTOR_H_
 #define ODOM_PREDICTOR_ODOM_PREDICTOR_H_
 #include <odom_predictor/imu_integrator.h>
+#include <odom_predictor/gtsam_imu_integrator.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <kindr/minimal/quat-transformation.h>
 #include <minkindr_conversions/kindr_msg.h>

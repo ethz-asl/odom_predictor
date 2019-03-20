@@ -22,7 +22,8 @@ OdomPredictor::OdomPredictor(const ros::NodeHandle& nh,
   transform_pub_ = nh_private_.advertise<geometry_msgs::TransformStamped>(
       "predicted_transform", kROSQueueLength);
 
-  integrator_.reset((ImuIntegrator*) new ZecImuIntegrator());
+  //integrator_.reset((ImuIntegrator*) new ZecImuIntegrator());
+  integrator_.reset((ImuIntegrator*) new GTSAMImuIntegrator());
 }
 
 void OdomPredictor::odometryCallback(const nav_msgs::OdometryConstPtr& msg) {

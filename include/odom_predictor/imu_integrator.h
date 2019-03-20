@@ -1,3 +1,6 @@
+#ifndef ODOM_PREDICTOR_IMU_INTEGRATOR_H
+#define ODOM_PREDICTOR_IMU_INTEGRATOR_H
+
 #include <Eigen/Dense>
 #include <kindr/minimal/quat-transformation.h>
 #include <boost/shared_ptr.hpp>
@@ -5,9 +8,6 @@
 typedef kindr::minimal::QuatTransformation Transformation;
 typedef kindr::minimal::RotationQuaternion Rotation;
 typedef Transformation::Vector3 Vector3;
-
-#ifndef ODOM_PREDICTOR_IMU_INTEGRATOR_H
-#define ODOM_PREDICTOR_IMU_INTEGRATOR_H
 
 class ImuIntegrator {
 
