@@ -1,6 +1,6 @@
 #ifndef ODOM_PREDICTOR_ODOM_PREDICTOR_H_
 #define ODOM_PREDICTOR_ODOM_PREDICTOR_H_
-
+#include <odom_predictor/imu_integrator.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <kindr/minimal/quat-transformation.h>
 #include <minkindr_conversions/kindr_msg.h>
@@ -55,12 +55,8 @@ class OdomPredictor {
   std::string child_frame_id_;
 
   ros::Time estimate_timestamp_;
-  Transformation transform_;
-  Vector3 linear_velocity_;
-  Vector3 angular_velocity_;
 
-  Vector3 imu_linear_acceleration_bias_;
-  Vector3 imu_angular_velocity_bias_;
+  std::shared_ptr<ImuIntegrator> integrator_;
 
   boost::array<double, 36ul> pose_covariance_;
   boost::array<double, 36ul> twist_covariance_;
