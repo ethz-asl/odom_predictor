@@ -30,6 +30,8 @@ class GTSAMImuIntegrator : ImuIntegrator {
                                       imu_angular_velocity,
                                       dt);
 
+    // propagate angular velocity in body frame
+    angular_velocity_ = biases_.correctGyroscope(imu_angular_velocity);
   }
 
   void getState(Transformation* transform,
