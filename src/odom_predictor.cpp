@@ -19,11 +19,14 @@ OdomPredictor::OdomPredictor(const ros::NodeHandle& nh,
 
   odom_pub_ = nh_private_.advertise<nav_msgs::Odometry>("predicted_odometry",
                                                         kROSQueueLength);
+  odom2_pub_ = nh_private_.advertise<nav_msgs::Odometry>("predicted_odometry_compare",
+                                                         kROSQueueLength);
+
   transform_pub_ = nh_private_.advertise<geometry_msgs::TransformStamped>(
       "predicted_transform", kROSQueueLength);
 
-  //integrator_.reset((ImuIntegrator*) new ZecImuIntegrator());
-  integrator_.reset((ImuIntegrator*) new GTSAMImuIntegrator());
+  integrator_.reset((ImuIntegrator*) new ZecImuIntegrator());
+  integrator2_.reset((ImuIntegrator*) new GTSAMImuIntegrator());
 }
 
 void OdomPredictor::odometryCallback(const nav_msgs::OdometryConstPtr& msg) {
@@ -45,6 +48,7 @@ void OdomPredictor::odometryCallback(const nav_msgs::OdometryConstPtr& msg) {
   tf::vectorMsgToKindr(msg->twist.twist.angular, &angular_velocity);
   // set integrator to this state
   integrator_->resetState(transform, linear_velocity, angular_velocity);
+  integrator2_->resetState(transform, linear_velocity, angular_velocity);
 
   pose_covariance_ = msg->pose.covariance;
   twist_covariance_ = msg->twist.covariance;
@@ -120,6 +124,8 @@ void OdomPredictor::imuBiasCallback(const sensor_msgs::ImuConstPtr& msg) {
 
   integrator_->resetBias(imu_angular_velocity_bias,
                          imu_linear_acceleration_bias);
+  integrator2_->resetBias(imu_angular_velocity_bias,
+                          imu_linear_acceleration_bias);
 
   have_bias_ = true;
 }
@@ -132,6 +138,8 @@ void OdomPredictor::integrateIMUData(const sensor_msgs::Imu& msg) {
   tf::vectorMsgToKindr(msg.angular_velocity, &imu_angular_velocity);
   integrator_->addMeasurement(delta_time, imu_linear_acceleration,
                               imu_angular_velocity);
+  integrator2_->addMeasurement(delta_time, imu_linear_acceleration,
+                               imu_angular_velocity);
 
   estimate_timestamp_ = msg.header.stamp;
 }
@@ -160,8 +168,16 @@ void OdomPredictor::publishOdometry() {
   tf::vectorKindrToMsg(linear_velocity, &msg.twist.twist.linear);
   tf::vectorKindrToMsg(angular_velocity, &msg.twist.twist.angular);
   msg.twist.covariance = twist_covariance_;
-
   odom_pub_.publish(msg);
+
+  // Publish result of second integrator
+  integrator2_->getState(&transform,
+                         &linear_velocity,
+                         &angular_velocity);
+  tf::poseKindrToMsg(transform, &msg.pose.pose);
+  tf::vectorKindrToMsg(linear_velocity, &msg.twist.twist.linear);
+  tf::vectorKindrToMsg(angular_velocity, &msg.twist.twist.angular);
+  odom2_pub_.publish(msg);
 }
 
 void OdomPredictor::publishTF() {

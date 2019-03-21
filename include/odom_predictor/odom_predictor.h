@@ -43,6 +43,7 @@ class OdomPredictor {
   ros::Subscriber odometry_sub_;
 
   ros::Publisher odom_pub_;
+  ros::Publisher odom2_pub_;
   ros::Publisher transform_pub_;
 
   tf::TransformBroadcaster br_;
@@ -58,6 +59,7 @@ class OdomPredictor {
   ros::Time estimate_timestamp_;
 
   std::shared_ptr<ImuIntegrator> integrator_;
+  std::shared_ptr<ImuIntegrator> integrator2_;
 
   boost::array<double, 36ul> pose_covariance_;
   boost::array<double, 36ul> twist_covariance_;
