@@ -21,4 +21,5 @@
   <depend>minkindr</depend>
   <depend>minkindr_conversions</depend>
   <depend>eigen_catkin</depend>
+  <depend>gtsam_catkin</depend>
 </package>
