@@ -25,6 +25,9 @@ OdomPredictor::OdomPredictor(const ros::NodeHandle& nh,
   transform_pub_ = nh_private_.advertise<geometry_msgs::TransformStamped>(
       "predicted_transform", kROSQueueLength);
 
+  frame_id_ = "odom";
+  child_frame_id_ = "/imu_predict";
+
   integrator_.reset((ImuIntegrator*) new ZecImuIntegrator());
   integrator2_.reset((ImuIntegrator*) new GTSAMImuIntegrator());
 }
@@ -52,8 +55,8 @@ void OdomPredictor::odometryCallback(const nav_msgs::OdometryConstPtr& msg) {
 
   pose_covariance_ = msg->pose.covariance;
   twist_covariance_ = msg->twist.covariance;
-  frame_id_ = msg->header.frame_id;
-  child_frame_id_ = msg->child_frame_id;
+  odom_frame_id_ = msg->header.frame_id;
+  odom_child_frame_id_ = msg->child_frame_id;
 
   // reintegrate IMU messages
   estimate_timestamp_ = msg->header.stamp;

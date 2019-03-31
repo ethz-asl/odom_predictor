@@ -53,6 +53,8 @@ class OdomPredictor {
   std::list<sensor_msgs::Imu> imu_queue_;
 
   int seq_;
+  std::string odom_frame_id_;
+  std::string odom_child_frame_id_;
   std::string frame_id_;
   std::string child_frame_id_;
 
