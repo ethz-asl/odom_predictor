@@ -89,12 +89,14 @@ void OdomPredictor::imuCallback(const sensor_msgs::ImuConstPtr& msg) {
   }
   if (imu_queue_.size() > max_imu_queue_length_) {
     ROS_WARN_STREAM_THROTTLE(
-        10, "There has been over "
+        10, "Stopping IMU Integration!! "
+        << "There has been over "
         << max_imu_queue_length_
         << " IMU messages since the last odometry update. The oldest "
-           "measurement will be forgotten. This message is printed "
-           "once every 10 seconds");
+           "measurement will be forgotten and integration resumed only "
+        << "when new odometry received.");
     imu_queue_.pop_front();
+    have_odom_ = false;
   }
 
   imu_queue_.push_back(*msg);
