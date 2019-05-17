@@ -8,6 +8,8 @@ OdomPredictor::OdomPredictor(const ros::NodeHandle& nh,
       have_odom_(false),
       have_bias_(false) {
   nh_private.param("max_imu_queue_length", max_imu_queue_length_, 1000);
+  nh_private.param("world_frame", frame_id_, (std::string)"odom");
+  nh_private.param("predictor_frame", child_frame_id_, (std::string)"imu_predict");
 
   constexpr size_t kROSQueueLength = 100;
   imu_sub_ =
@@ -24,9 +26,6 @@ OdomPredictor::OdomPredictor(const ros::NodeHandle& nh,
 
   transform_pub_ = nh_private_.advertise<geometry_msgs::TransformStamped>(
       "predicted_transform", kROSQueueLength);
-
-  frame_id_ = "odom";
-  child_frame_id_ = "/imu_predict";
 
   integrator_.reset((ImuIntegrator*) new ZecImuIntegrator());
   integrator2_.reset((ImuIntegrator*) new GTSAMImuIntegrator());
@@ -82,7 +81,7 @@ void OdomPredictor::imuCallback(const sensor_msgs::ImuConstPtr& msg) {
     ROS_ERROR_STREAM("Latest IMU message occured at time: "
                          << msg->header.stamp
                          << ". This is before the previously received IMU "
-                            "message that ouccured at: "
+                            "message that occured at: "
                          << imu_queue_.back().header.stamp
                          << ". The current imu queue will be reset.");
     imu_queue_.clear();
